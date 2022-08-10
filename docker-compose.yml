@@ -1,45 +1,57 @@
-version: '3.8'
-
+version: '3'
 services:
   mongo1:
+    hostname: mongo1
     container_name: mongo1
-    image: mongo
+    image: mongo:4.4
     volumes:
       - ./mongo1/data:/data/db
       - ./rs-init.sh:/scripts/rs-init.sh
       - ./createuser.sh:/scripts/createuser.sh
-    networks:
-      - mongors-network
+    expose:
+      - 27017
     ports:
-      - 27021:27017
-    links:
-      - mongo2
-      - mongo3
+      - 27020:27017
     restart: always
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
+    networks:
+      mongoreplica:
+        ipv4_address: 172.20.1.11
+    entrypoint: ['/usr/bin/mongod', '--bind_ip_all', '--replSet', 'rs0']
   mongo2:
+    hostname: mongo2
     container_name: mongo2
-    image: mongo
+    image: mongo:4.4
     volumes:
       - ./mongo2/data:/data/db
+    expose:
+      - 27017
+    ports:
+      - 27021:27017
+    restart: always
     networks:
-      - mongors-network
+      mongoreplica:
+        ipv4_address: 172.20.1.12
+    entrypoint: ['/usr/bin/mongod', '--bind_ip_all', '--replSet', 'rs0']
+  mongo3:
+    hostname: mongo3
+    container_name: mongo3
+    image: mongo:4.4
+    expose:
+      - 27017
     ports:
       - 27022:27017
-    restart: always
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
-  mongo3:
-    container_name: mongo3
-    image: mongo
     volumes:
       - ./mongo3/data:/data/db
-    networks:
-      - mongors-network
-    ports:
-      - 27023:27017
     restart: always
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "dbrs" ]
+    networks:
+      mongoreplica:
+        ipv4_address: 172.20.1.13
+    entrypoint: ['/usr/bin/mongod', '--bind_ip_all', '--replSet', 'rs0']
 
 networks:
-  mongors-network:
+  mongoreplica:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.1.0/16
